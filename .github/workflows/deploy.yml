@@ -1,0 +1,36 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/deployerops/coding/projects/sufism/sufism-admin
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Installing dependencies"
+            npm install
+
+            echo "Building project"
+            npm run build
+
+            echo "Restarting PM2 process"
+            pm2 restart sufism-admin --update-env
+
+            echo "Deployment completed successfully!"
