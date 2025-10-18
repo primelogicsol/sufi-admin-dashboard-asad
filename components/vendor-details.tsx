@@ -232,6 +232,7 @@ interface Vendor {
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+import { ApiClient } from "@/lib/utils/api-client"
 
 export function VendorDetails({ userId }: VendorDetailsProps) {
   const [vendor, setVendor] = useState<Vendor | null>(null)
@@ -273,10 +274,7 @@ export function VendorDetails({ userId }: VendorDetailsProps) {
 
   async function fetchVendor() {
     try {
-      const res = await fetch(`${BASE_URL}/vendor/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
+      const res = await ApiClient.get(`/admin/vendors/${userId}`)
       const data = await res.json()
       setVendor(data.data)
     } catch (err) {
@@ -294,9 +292,7 @@ export function VendorDetails({ userId }: VendorDetailsProps) {
 
     setActionLoading(true)
     try {
-      const res = await fetch(`${BASE_URL}/user/delete-vendor/${vendor.id}`, {
-        method: "DELETE",
-      })
+      const res = await ApiClient.delete(`/admin/vendors/${vendor.id}`)
       if (res.ok) {
         alert("Vendor deleted successfully")
         setVendor(null) // clear vendor from UI
@@ -317,11 +313,7 @@ export function VendorDetails({ userId }: VendorDetailsProps) {
     const newStatus = !vendor.isVerified
     setActionLoading(true)
     try {
-      const res = await fetch(`${BASE_URL}/user/verify-vendor/${vendor.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      const res = await ApiClient.put(`/admin/vendors/${vendor.id}/${newStatus ? 'approve' : 'reject'}`, newStatus ? { status: "APPROVED" } : { status: "REJECTED" })
       const data = await res.json()
       if (res.ok) {
         if (newStatus) {

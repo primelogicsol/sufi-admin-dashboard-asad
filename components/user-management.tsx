@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Search, Shield, ShieldOff, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ApiClient } from "@/lib/utils/api-client";
 
 interface Vendor {
   id: string;
@@ -60,16 +61,18 @@ export function UserManagement() {
   ) => {
     try {
       setLoading(true);
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/user/vendors-list?page=${page}&limit=${pagination.limit}&search=${search}`;
-      if (verified !== "all") {
-        url += `&verified=${verified}`;
-      }
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: String(pagination.limit),
+      });
+      if (search) query.set("search", search);
+      if (verified !== "all") query.set("verified", verified);
 
-      const res = await fetch(url);
+      const res = await ApiClient.get(`/admin/vendors?${query.toString()}`);
       const data = await res.json();
       if (res.ok) {
-        setVendors(data.data.vendors);
-        setPagination(data.data.pagination);
+        setVendors(data.data?.vendors ?? data.data?.items ?? []);
+        setPagination(data.data?.pagination ?? { ...pagination, page });
       } else {
         toast({
           title: "Error",

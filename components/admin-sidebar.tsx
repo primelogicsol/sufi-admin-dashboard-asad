@@ -14,10 +14,11 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const menuItems = [
-
-    { id: "users", label: "User Management", icon: Users },
-    // { id: "security", label: "Security", icon: Shield },
-    // { id: "settings", label: "Settings", icon: Settings },
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "vendors", label: "Vendors", icon: Users },
+    { id: "users", label: "Users", icon: Shield },
+    { id: "analytics", label: "Analytics", icon: Settings },
+    // { id: "notifications", label: "Notifications", icon: Settings },
   ]
 
   return (

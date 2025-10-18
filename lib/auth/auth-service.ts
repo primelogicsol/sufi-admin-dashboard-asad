@@ -9,12 +9,14 @@ export class AuthService {
   // Login user
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/user/login`, {
+      // Admin login endpoint (per collection): /user/admin/login
+      const response = await fetch(`${API_BASE_URL}/user/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        // Backend expects { username, password }. We map email -> username to avoid changing UI types.
+        body: JSON.stringify({ username: (credentials as any).email ?? (credentials as any).username, password: credentials.password }),
       })
 
       const data = await response.json()
@@ -26,18 +28,22 @@ export class AuthService {
         }
       }
      
-      console.log(data.data.accessToken, data.data.refreshToken)
-      // Check if response has the expected token structure
-      if (data.data.accessToken && data.data.refreshToken) {
+      // Support both formats:
+      // 1) { data: { token } }
+      // 2) { data: { accessToken, refreshToken } }
+      const tokenOnly: string | undefined = data?.data?.token
+      const accessToken: string | undefined = data?.data?.accessToken || tokenOnly
+      const refreshToken: string | undefined = data?.data?.refreshToken || tokenOnly
+
+      if (accessToken) {
         const tokens = {
-          accessToken: data.data.accessToken,
-          refreshToken: data.data.refreshToken,
+          accessToken,
+          // Fallback: if backend doesn't return refreshToken, reuse accessToken to satisfy storage shape
+          refreshToken: refreshToken ?? accessToken,
         }
 
-        // Store tokens
         TokenManager.setTokens(tokens)
 
-        // Store user info if available
         if (data.user) {
           TokenManager.setUser(data.user)
         }
@@ -172,5 +178,22 @@ export class AuthService {
     }
 
     return true
+  }
+
+  // Verify current admin session token
+  static async verifyAdmin(): Promise<boolean> {
+    try {
+      const accessToken = TokenManager.getAccessToken()
+      if (!accessToken) return false
+      const res = await fetch(`${API_BASE_URL}/user/admin/verify`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      return res.ok
+    } catch (e) {
+      return false
+    }
   }
 }
